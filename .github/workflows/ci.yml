@@ -16,7 +16,10 @@ jobs:
         dotnet-version: '9.0.x'
     - name: Restore dependencies
       run: dotnet restore
+      working-directory: backend
     - name: Build project
       run: dotnet build --no-restore --configuration Release
+      working-directory: backend
     - name: Run automated tests
       run: dotnet test --no-build --verbosity normal --configuration Release
+      working-directory: backend
