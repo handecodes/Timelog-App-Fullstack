@@ -7,9 +7,9 @@ on:
       - completed
 
 env:
-  AZURE_CONTAINER_REGISTRY: "k5Teamproj"
+  AZURE_CONTAINER_REGISTRY: "k5teamproj2"
   CONTAINER_APP_NAME: "k5-teamproj"
-  RESOURCE_GROUP: "chasdev"
+  RESOURCE_GROUP: "k5-teamproj-rg"
 
 jobs:
   build-and-deploy:
