@@ -1,9 +1,18 @@
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
+using Azure.Identity;
 using OllamaSharp;
 using ProxyAPI.Extensions;
 using Scalar.AspNetCore;
 using System.Net.Http.Headers;
 
 var builder = WebApplication.CreateBuilder(args);
+
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddAzureKeyVault(
+        new Uri("https://kv-k5-teamproj.vault.azure.net/"),
+        new DefaultAzureCredential());
+}
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -33,10 +42,13 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error");
-    app.UseHsts();
     app.MapOpenApi();
     app.MapScalarApiReference();
+}
+else
+{
+    app.UseExceptionHandler("/Error");
+    app.UseHsts();
 }
 
 app.UseHttpsRedirection();
