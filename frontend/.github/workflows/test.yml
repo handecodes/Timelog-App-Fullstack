@@ -104,7 +104,7 @@ jobs:
           # Namnet på artifact:en - inkluderar Node-version för att göra namnet unikt
           # Blir "coverage-report-node-18.x" eller "coverage-report-node-20.x"
           # I v4 av upload-artifact måste varje artifact ha ett unikt namn
-          name: coverage-report-node-${{ matrix.node-version }}
+          name: coverage-report-node-20
           # Sökvägen till mappen/filerna som ska laddas upp
           # Alla filer i coverage/-mappen inkluderas (HTML-rapport, JSON-filer, etc.)
           path: coverage/

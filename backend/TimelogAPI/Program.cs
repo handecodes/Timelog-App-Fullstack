@@ -59,7 +59,7 @@ builder.Services.AddRateLimiter(options =>
 
 builder.Services.AddHttpClient("ProxyApiClient", client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7221");
+    client.BaseAddress = new Uri(builder.Configuration["ProxyApiUrl"]);
 });
 
 builder.Services.AddOpenApi(options =>

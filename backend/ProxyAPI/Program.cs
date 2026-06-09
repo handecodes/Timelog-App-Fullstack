@@ -12,7 +12,7 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddHttpClient("TimelogAPIClient", client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7092");
+    client.BaseAddress = new Uri(builder.Configuration["TimelogApiUrl"]);
 });
 
 var ollamaUrl = new Uri("https://ollama.com");
