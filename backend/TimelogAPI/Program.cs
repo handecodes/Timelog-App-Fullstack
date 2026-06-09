@@ -1,5 +1,6 @@
 using System.Text;
 using Asp.Versioning;
+using Azure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
@@ -9,6 +10,13 @@ using TimelogAPI.Middleware;
 using TimelogAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddAzureKeyVault(
+        new Uri("https://kv-k5-teamproj.vault.azure.net/"),
+        new DefaultAzureCredential());
+}
 
 builder.Host.UseDefaultServiceProvider(options =>
 {
