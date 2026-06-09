@@ -2,7 +2,7 @@ name: Build and Deploy to Azure Container Apps
 
 on:
   workflow_run:
-    workflows: [".NET CI Pipeline"]
+    workflows: ["Backend CI Pipeline"]
     types:
       - completed
 
@@ -34,7 +34,8 @@ jobs:
           tags: |
             ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_APP_NAME }}:${{ github.sha }}
             ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_APP_NAME }}:latest
-          file: TimelogApi/Dockerfile
+          context: backend
+          file: backend/TimelogAPI/Dockerfile
 
       - name: Azure Login
         uses: azure/login@v2
