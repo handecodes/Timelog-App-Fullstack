@@ -1,6 +1,7 @@
 [![CI](https://github.com/BwunLevain/K4-TeamProj/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
 
 
+
 # About
 This solution contains multiple ASP.NET Core projects demonstrating API architecture, proxy communication, testing, and secure configuration.
 
