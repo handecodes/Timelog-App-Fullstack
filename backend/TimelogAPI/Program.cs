@@ -11,7 +11,10 @@ using TimelogAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-if (!builder.Environment.IsDevelopment())
+// Only add Azure Key Vault when explicitly enabled (and not in Development).
+// This avoids containers attempting DefaultAzureCredential during local dev.
+var enableKeyVault = builder.Configuration["ENABLE_AZURE_KEYVAULT"]?.ToLower() == "true";
+if (enableKeyVault && !builder.Environment.IsDevelopment())
 {
     builder.Configuration.AddAzureKeyVault(
         new Uri("https://kv-k5-teamproj.vault.azure.net/"),
@@ -68,6 +71,18 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddHttpClient("ProxyApiClient", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["ProxyApiUrl"]);
+});
+
+// Allow frontend dev origin and production placeholder
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendPolicy", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:5173", "https://localhost:5173", "https://<your-frontend-production-url>")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
 });
 
 builder.Services.AddOpenApi(options =>
@@ -135,6 +150,9 @@ app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseRateLimiter();
+
+// Enable CORS for frontend - must be before authentication/authorization
+app.UseCors("FrontendPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();

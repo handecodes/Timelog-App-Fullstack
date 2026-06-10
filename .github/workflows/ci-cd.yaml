@@ -1,0 +1,82 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  id-token: write
+  contents: read
+  packages: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      ACR_NAME: ${{ secrets.ACR_NAME }}
+      RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+      SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      LOCATION: ${{ secrets.AZURE_LOCATION }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install frontend deps
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Run frontend tests
+        working-directory: ./frontend
+        run: npm test
+
+      - name: Restore and test backend
+        run: |
+          dotnet restore
+          dotnet test ./backend/K4-TeamProj.Tests/K4-TeamProj.Tests.csproj
+
+      - name: Login to Azure with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Azure CLI - Configure ACR login
+        run: az acr login --name $ACR_NAME
+
+      - name: Build and push TimelogAPI image
+        run: |
+          docker build -f backend/TimelogAPI/Dockerfile -t $ACR_NAME.azurecr.io/timelogapi:${{ github.sha }} ./backend/TimelogAPI
+          docker push $ACR_NAME.azurecr.io/timelogapi:${{ github.sha }}
+
+      - name: Build and push ProxyAPI image
+        run: |
+          docker build -f backend/ProxyAPI/Dockerfile -t $ACR_NAME.azurecr.io/proxyapi:${{ github.sha }} ./backend/ProxyAPI
+          docker push $ACR_NAME.azurecr.io/proxyapi:${{ github.sha }}
+
+      - name: Deploy TimelogAPI to Container Apps
+        run: |
+          az containerapp update --name timelogapi --resource-group $RESOURCE_GROUP --image $ACR_NAME.azurecr.io/timelogapi:${{ github.sha }}
+
+      - name: Deploy ProxyAPI to Container Apps
+        run: |
+          az containerapp update --name proxyapi --resource-group $RESOURCE_GROUP --image $ACR_NAME.azurecr.io/proxyapi:${{ github.sha }}
+
+      - name: Build and deploy frontend
+        working-directory: ./frontend
+        run: |
+          npm run build
+          # Deploy to Azure Storage or Static Web Apps - adapt to your hosting
+          echo "Frontend build ready. Please configure deployment step for your hosting."

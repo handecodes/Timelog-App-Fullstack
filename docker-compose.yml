@@ -1,0 +1,41 @@
+version: '3.8'
+
+# Compose file to run both backend services locally for development.
+# TimelogAPI will be available on http://localhost:5002 (container port 8080)
+# ProxyAPI will be available on http://localhost:5003 (container port 8080)
+
+services:
+  timelogapi:
+    build:
+      context: ./backend
+      dockerfile: TimelogAPI/Dockerfile
+    image: timelogapi:dev
+    container_name: timelogapi
+    environment:
+      # Dev JWT settings (override in a .env or here)
+      - Jwt__Key=dev_secret_long_enough_for_hs256_signing_0123456789
+      - Jwt__Issuer=timelog.local
+      - Jwt__Audience=timelog.users
+      # Run in Development inside compose for easier local debugging
+      - ASPNETCORE_ENVIRONMENT=Development
+      # If ProxyAPI needs to call back to this service via container DNS
+      - ProxyApiUrl=http://proxyapi:8080/api/v1
+    ports:
+      - "5002:8080"
+
+  proxyapi:
+    build:
+      context: ./backend
+      dockerfile: ProxyAPI/Dockerfile
+    image: proxyapi:dev
+    container_name: proxyapi
+    depends_on:
+      - timelogapi
+    environment:
+      # When running in compose, ProxyAPI can reach TimelogAPI via the
+      # internal service name 'timelogapi' on port 8080.
+      - TimelogApiUrl=http://timelogapi:8080/api/v1
+      - OllamaApiKey=dev-ollama-key
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "5003:8080"

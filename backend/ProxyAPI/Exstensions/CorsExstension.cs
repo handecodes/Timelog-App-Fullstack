@@ -9,7 +9,8 @@
                 options.AddPolicy("StrictPolicy", policy =>
                 {
                     policy
-                        .WithOrigins("https://localhost:3000") // behöver ändras senare
+                        // allow common dev frontend origin and keep placeholder for production
+                        .WithOrigins("http://localhost:5173", "https://localhost:3000", "https://<your-frontend-production-url>")
                         .AllowAnyHeader()
                         .AllowAnyMethod();
                 });

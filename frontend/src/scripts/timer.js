@@ -1,4 +1,5 @@
-import { logCurrentTime } from "./localStorage.js";
+import { logCurrentTime, addToSyncQueue } from "./localStorage.js";
+import { createTimeLog, getAuthToken } from "./api.js";
 
 let timer = null;
 let totalSeconds = 0;
@@ -34,7 +35,32 @@ function pauseTimer() {
 
 function stopTimer(updateCallback, category) {
   clearInterval(timer);
-  logCurrentTime(category, startTime, Date.now());
+  const endTime = Date.now();
+  // Always save locally first (optimistic)
+  logCurrentTime(category, startTime, endTime);
+
+  // If authenticated try to push to backend
+  (async () => {
+    if (!getAuthToken()) {
+      // Not authenticated — will sync later
+      return;
+    }
+
+    const payload = {
+      name: category,
+      description: "",
+      startTime: new Date(startTime).toISOString(),
+      endTime: new Date(endTime).toISOString(),
+    };
+
+    try {
+      await createTimeLog(payload);
+      console.log("Time log synced to backend");
+    } catch (err) {
+      console.warn("Failed to sync to backend, queued for retry", err);
+      addToSyncQueue({ category, startTime, endTime });
+    }
+  })();
   isRunning = false;
   totalSeconds = 0;
   if (updateCallback) updateCallback(totalSeconds);
