@@ -1,5 +1,6 @@
 import { isValid, toTotalSeconds, buildSession } from "./addTimeLogic.js";
-import { logCurrentTime } from "./localStorage.js";
+import { logCurrentTime, addToSyncQueue } from "./localStorage.js";
+import { createTimeLog, getAuthToken } from "./api.js";
 
 const hoursInput = document.getElementById("hoursInput");
 const minutesInput = document.getElementById("minutesInput");
@@ -48,7 +49,20 @@ addBtn.addEventListener("click", () => {
 function saveSession(totalSecs, datetime) {
   const { startTime, endTime } = buildSession(totalSecs, datetime);
   const category = document.querySelector(".statsContainer").dataset.category;
+  // Save locally first
   logCurrentTime(category, startTime, endTime);
+
+  // Try to push to backend if authenticated
+  (async () => {
+    if (!getAuthToken()) return;
+    try {
+      await createTimeLog({ name: category, description: "", startTime: new Date(startTime).toISOString(), endTime: new Date(endTime).toISOString() });
+      console.log('Manual session synced to backend');
+    } catch (err) {
+      console.warn('Failed to sync manual session, queued for retry', err);
+      addToSyncQueue({ category, startTime, endTime });
+    }
+  })();
 
   document.querySelectorAll(".number-card").forEach((el) => {
     el.setAttribute("datetime", datetime);

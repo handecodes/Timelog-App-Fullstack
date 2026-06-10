@@ -7,7 +7,9 @@ using System.Net.Http.Headers;
 
 var builder = WebApplication.CreateBuilder(args);
 
-if (!builder.Environment.IsDevelopment())
+// Only add Azure Key Vault when explicitly enabled (and not in Development).
+var enableKeyVault = builder.Configuration["ENABLE_AZURE_KEYVAULT"]?.ToLower() == "true";
+if (enableKeyVault && !builder.Environment.IsDevelopment())
 {
     builder.Configuration.AddAzureKeyVault(
         new Uri("https://kv-k5-teamproj.vault.azure.net/"),
@@ -19,10 +21,14 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-builder.Services.AddHttpClient("TimelogAPIClient", client =>
+var timelogApiUrl = builder.Configuration["TimelogApiUrl"];
+if (!string.IsNullOrWhiteSpace(timelogApiUrl))
 {
-    client.BaseAddress = new Uri(builder.Configuration["TimelogApiUrl"]);
-});
+    builder.Services.AddHttpClient("TimelogAPIClient", client =>
+    {
+        client.BaseAddress = new Uri(timelogApiUrl);
+    });
+}
 
 var ollamaUrl = new Uri("https://ollama.com");
 var apiKey = builder.Configuration["OllamaApiKey"] ?? throw new Exception("Ollama API key is not configured.");

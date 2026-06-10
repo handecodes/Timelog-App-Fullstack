@@ -1,3 +1,5 @@
+import './chatbot.js';
+
 //trackers menu functions
 function setupTrackersMenu() {
   const toggleBtn = document.getElementById("trackersToggle");

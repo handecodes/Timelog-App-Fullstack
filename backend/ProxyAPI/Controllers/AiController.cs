@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using OllamaSharp;
 using ProxyAPI.DTOs;
 
 [ApiController]
 [Route("api/[controller]")]
+[Route("api/v1/[controller]")]
 public class AiController : ControllerBase
 {
     private readonly IOllamaApiClient _ollama;

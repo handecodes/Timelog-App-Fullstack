@@ -1,8 +1,9 @@
 import { updateGraph } from "./barchartDOM.js";
-import { getHistory, formatDuration } from "./localStorage.js";
+import { getHistory, formatDuration, fetchRemoteHistory } from "./localStorage.js";
+import { getAuthToken } from "./api.js";
 import { deleteHistoryEntry, editHistoryEntry, filterByTimeInterval, parseLocaleDate } from "./overviewLogic.js";
 
-document.addEventListener("DOMContentLoaded", () => {
+function init() {
   const historyButton = document.getElementById("historyButton");
   const graphButton = document.getElementById("graphButton");
   const historySection = document.getElementById("historyOverviewArea");
@@ -26,15 +27,32 @@ document.addEventListener("DOMContentLoaded", () => {
     updateGraph();
   });
 
-  function updateHistory(customHistory = null) {
+  async function updateHistory(customHistory = null) {
     const historyList = document.querySelector(".historyList");
-    const history = customHistory || getHistory();
+    let history = customHistory || getHistory();
+
+    // If no local history but we have an auth token, try to fetch from backend
+    if ((!history || history.length === 0) && getAuthToken()) {
+      try {
+        await fetchRemoteHistory();
+        history = customHistory || getHistory();
+      } catch (err) {
+        console.warn('Auto fetch remote history failed', err);
+      }
+    }
 
     // Clearing history list initially
     historyList.innerHTML = "";
 
-    // Recent entry should be first
-    history.sort((a, b) => parseLocaleDate(b.start) - parseLocaleDate(a.start));
+    // Recent entry should be first. Defensive: ignore entries with unparseable dates.
+    history.sort((a, b) => {
+      try {
+        return parseLocaleDate(b.start) - parseLocaleDate(a.start);
+      } catch (err) {
+        console.warn('Skipping sort comparison for malformed dates', err, a, b);
+        return 0;
+      }
+    });
 
     history.forEach((entry) => {
       const li = document.createElement("li");
@@ -164,7 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Handle empty history
-    if (history.length === 0) {
+    if (!history || history.length === 0) {
       const placeholder = document.createElement("li");
       placeholder.textContent = "No history available.";
       placeholder.className = "placeholder";
@@ -211,7 +229,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  updateHistory();
+  // If authenticated and local history is empty, try to populate from backend first
+  (async () => {
+    try {
+      await fetchRemoteHistory();
+    } catch (err) {
+      console.warn('Remote history fetch failed', err);
+    }
+    updateHistory();
+  })();
+  // If remote history is fetched after login, refresh the view
+  window.addEventListener('remoteHistoryFetched', () => {
+    try { updateHistory(); } catch (err) { console.warn('failed to update history after remote fetch', err); }
+  });
   setupRangeSelector();
   setupResetSelector();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
