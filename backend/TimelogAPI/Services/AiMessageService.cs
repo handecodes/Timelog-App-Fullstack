@@ -45,7 +45,7 @@ namespace TimelogAPI.Services
                 var formattedPrompt = $"Kolla på mina loggade timer från en tidsloggningsapp och ge mig antingen en positiv affrimation om jag gjorde bra eller en förolämpning om jag gjorde dåligt. Här är datan: {logsJson}";
 
                 var client = _httpClientFactory.CreateClient("ProxyApiClient");
-                var response = await client.PostAsJsonAsync("api/ai/ask", formattedPrompt);
+                var response = await client.PostAsJsonAsync("api/ai/ask", new { Prompt = formattedPrompt });
 
                 if (response.IsSuccessStatusCode)
                 {
