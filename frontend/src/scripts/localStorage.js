@@ -1,4 +1,7 @@
+import * as API from "./api.js";
+
 const STORAGE_KEY = "time_log_history";
+const SYNC_QUEUE_KEY = "time_log_sync_queue";
 
 function formatDuration(ms) {
   const totalSecs = Math.floor(ms / 1000);
@@ -38,6 +41,9 @@ function logCurrentTime(category, startTime, endTime = Date.now()) {
   console.log(`Logged: ${entry.start} → ${entry.end}`);
   console.log(`Category: ${category}`);
   console.log(`Duration: ${duration}`);
+
+  // Try to sync with backend
+  syncToBackend(entry);
 }
 
 function getHistory() {
@@ -49,4 +55,62 @@ function clearHistory() {
   console.log("History cleared.");
 }
 
-export { logCurrentTime, getHistory, clearHistory, formatDuration };
+// ===== Backend Sync Functions =====
+async function syncToBackend(entry) {
+  if (!API.getAuthToken()) {
+    console.log("Not authenticated. Entry saved locally.");
+    return;
+  }
+
+  try {
+    const backendEntry = {
+      name: entry.category,
+      description: "",
+      startTime: new Date(entry.start).toISOString(),
+      endTime: new Date(entry.end).toISOString(),
+    };
+
+    const result = await API.createTimeLog(backendEntry);
+    console.log("Synced to backend:", result);
+  } catch (error) {
+    console.error("Failed to sync to backend:", error);
+    // Add to sync queue for retry
+    addToSyncQueue(entry);
+  }
+}
+
+function addToSyncQueue(entry) {
+  const queue = JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY)) || [];
+  queue.push(entry);
+  localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
+}
+
+async function syncQueue() {
+  const queue = JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY)) || [];
+  if (queue.length === 0) return;
+
+  if (!API.getAuthToken()) {
+    console.log("Not authenticated. Cannot sync queue.");
+    return;
+  }
+
+  const failed = [];
+  for (const entry of queue) {
+    try {
+      await syncToBackend(entry);
+    } catch (error) {
+      console.error("Failed to sync entry:", error);
+      failed.push(entry);
+    }
+  }
+
+  if (failed.length === 0) {
+    localStorage.removeItem(SYNC_QUEUE_KEY);
+    console.log("Sync queue cleared.");
+  } else {
+    localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(failed));
+    console.log(`${failed.length} items remain in sync queue.`);
+  }
+}
+
+export { logCurrentTime, getHistory, clearHistory, formatDuration, syncToBackend, syncQueue, addToSyncQueue };
