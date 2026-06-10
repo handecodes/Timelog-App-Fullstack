@@ -127,6 +127,82 @@
         font-weight: bold;
         text-decoration: none;
       }
+
+      /* --- AI Feedback section --- */
+      .aiFeedbackContainer {
+        margin: 1.5rem 1rem;
+        padding: 1.25rem;
+        background-color: var(--primary-purple);
+        border-radius: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .aiFeedbackContainer h2 {
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        color: var(--button-text);
+      }
+
+      .aiLoginPanel {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+      }
+
+      .aiLoginPanel input {
+        flex: 1;
+        min-width: 8rem;
+        padding: 0.5rem 0.75rem;
+        border: none;
+        border-radius: 0.5rem;
+        background-color: var(--accent-light);
+        color: var(--text-dark);
+        font-family: var(--font-main);
+        font-size: 0.9rem;
+      }
+
+      .aiFeedbackDateRow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+      }
+
+      .aiFeedbackDateRow label {
+        font-size: 0.85rem;
+        color: var(--button-text);
+      }
+
+      .aiFeedbackDateRow input[type="date"] {
+        padding: 0.45rem 0.6rem;
+        border: none;
+        border-radius: 0.5rem;
+        background-color: var(--accent-light);
+        color: var(--text-dark);
+        font-family: var(--font-main);
+        font-size: 0.85rem;
+      }
+
+      .aiStatusMessage {
+        font-size: 0.85rem;
+        color: var(--button-text);
+        width: 100%;
+      }
+
+      .aiFeedbackResult {
+        margin-top: 0.5rem;
+        padding: 0.75rem 1rem;
+        background-color: var(--accent-light);
+        color: var(--text-dark);
+        border-radius: 0.75rem;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+      }
     </style>
     <link rel="stylesheet" href="./src/css/variables.css" />
     <link rel="stylesheet" href="./src/css/base.css" />
@@ -238,6 +314,30 @@
           RANGE
         </button>
       </section>
+
+      <section class="aiFeedbackContainer" aria-labelledby="aiFeedbackTitle">
+        <h2 id="aiFeedbackTitle">AI FEEDBACK</h2>
+
+        <div class="aiLoginPanel">
+          <input type="text" id="aiUsername" placeholder="Username" autocomplete="username" />
+          <input type="password" id="aiPassword" placeholder="Password" autocomplete="current-password" />
+          <button id="aiLoginButton" class="btn-primary">LOG IN</button>
+          <p id="aiLoginStatus" class="aiStatusMessage" aria-live="polite"></p>
+        </div>
+
+        <div class="aiFeedbackPanel">
+          <div class="aiFeedbackDateRow">
+            <label for="aiFeedbackFrom">From</label>
+            <input type="date" id="aiFeedbackFrom" />
+            <label for="aiFeedbackTo">To</label>
+            <input type="date" id="aiFeedbackTo" />
+          </div>
+          <button id="aiFeedbackButton" class="btn-primary" style="margin-top: 0.5rem;">
+            GET AI FEEDBACK
+          </button>
+          <div id="aiFeedbackResult" class="aiFeedbackResult" hidden aria-live="polite"></div>
+        </div>
+      </section>
     </main>
 
     <script src="./src/scripts/navigation.js" type="module"></script>
@@ -245,5 +345,52 @@
   <script src="./src/scripts/overviewBootstrap.js" type="module"></script>
     <script src="./src/scripts/settingsDOM.js" type="module"></script>
     <script src="swCall.js"></script>
+    <script type="module">
+      import { login, getAiFeedback } from "./src/scripts/apiFeedback.js";
+
+      const today = new Date().toISOString().slice(0, 10);
+      const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+      document.getElementById("aiFeedbackFrom").value = weekAgo;
+      document.getElementById("aiFeedbackTo").value = today;
+
+      document.getElementById("aiLoginButton").addEventListener("click", async () => {
+        const username = document.getElementById("aiUsername").value.trim();
+        const password = document.getElementById("aiPassword").value;
+        const status = document.getElementById("aiLoginStatus");
+        if (!username || !password) {
+          status.textContent = "Enter username and password.";
+          return;
+        }
+        status.textContent = "Logging in…";
+        try {
+          await login(username, password);
+          status.textContent = "Logged in.";
+          document.getElementById("aiPassword").value = "";
+        } catch (err) {
+          status.textContent = `Login failed: ${err.message}`;
+        }
+      });
+
+      document.getElementById("aiFeedbackButton").addEventListener("click", async () => {
+        const fromDate = document.getElementById("aiFeedbackFrom").value;
+        const toDate = document.getElementById("aiFeedbackTo").value;
+        const resultBox = document.getElementById("aiFeedbackResult");
+        if (!fromDate || !toDate) {
+          resultBox.textContent = "Select a date range first.";
+          resultBox.hidden = false;
+          return;
+        }
+        resultBox.textContent = "Fetching feedback…";
+        resultBox.hidden = false;
+        try {
+          const message = await getAiFeedback(fromDate + "T00:00:00", toDate + "T23:59:59");
+          resultBox.textContent = message;
+        } catch (err) {
+          resultBox.textContent = err.message.includes("abort")
+            ? "Request timed out. Try again."
+            : `Error: ${err.message}`;
+        }
+      });
+    </script>
   </body>
 </html>
