@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using TimelogAPI.Extensions;
 using TimelogAPI.Filters;
 using TimelogAPI.Middleware;
 using TimelogAPI.Services;
@@ -49,6 +50,8 @@ builder.Services.AddAuthentication(options =>
             Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
     };
 });
+
+builder.Services.AddCustomCors();
 
 builder.Services.AddScoped<IAiMessageService, AiMessageService>();
 builder.Services.AddScoped<ITimelogService, TimelogService>();
@@ -135,6 +138,8 @@ app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseRateLimiter();
+
+app.UseCors("StrictPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();

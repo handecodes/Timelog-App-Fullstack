@@ -1,4 +1,4 @@
-﻿namespace ProxyAPI.Extensions
+namespace TimelogAPI.Extensions
 {
     public static class CorsExtension
     {
@@ -9,7 +9,7 @@
                 options.AddPolicy("StrictPolicy", policy =>
                 {
                     policy
-                        .WithOrigins("https://localhost:3000", "http://localhost:8080")
+                        .WithOrigins("http://localhost:8080")
                         .AllowAnyHeader()
                         .AllowAnyMethod();
                 });
