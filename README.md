@@ -162,81 +162,9 @@ Azure Key Vault
 
 ## Tools
 
-* Azure Application Insights
 * Azure Log Analytics
 
-## What is Monitored
 
-### Requests
-
-* Endpoint
-* Status Code
-* Duration
-
-### Exceptions
-
-* Stack Traces
-* Error Messages
-
-### Dependencies
-
-* Database Calls
-* OpenAI Calls
-* External API Calls
-
-### Performance
-
-* Latency
-* CPU
-* Memory Usage
-
-## Troubleshooting
-
-### Step 1
-
-Check the latest deployment:
-
-```text
-GitHub Actions → Deploy workflow
-```
-
-### Step 2
-
-Check container logs:
-
-```text
-Azure Container Apps
-→ Logs
-```
-
-### Step 3
-
-Check exceptions:
-
-```text
-Application Insights
-→ Failures
-```
-
-### Step 4
-
-Check request traces:
-
-```text
-Application Insights
-→ Transaction Search
-```
-
-## Runbook – Failed Deployment
-
-If a deployment fails:
-
-1. Check pipeline logs
-2. Verify that the image was pushed to ACR
-3. Check the Container App revision
-4. Check Key Vault access
-5. Check Application Insights errors
-6. Roll back to a previous revision if necessary
 
 ---
 
@@ -246,7 +174,7 @@ If a deployment fails:
 
 The system contains an AI function that can:
 
-*
+* Affirmations based on the time you used for work
 
 ## Request Flow
 
