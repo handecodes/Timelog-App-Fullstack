@@ -24,7 +24,8 @@ namespace TimelogAPI.Services
 
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadAsStringAsync();
+                    var result = await response.Content.ReadFromJsonAsync<AiMessageResponse>();
+                    return result?.GeneratedMessage ?? "Tomt svar från AI.";
                 }
 
                 _logger.LogWarning("AI Service returnerade status: {StatusCode}", response.StatusCode);
@@ -49,7 +50,8 @@ namespace TimelogAPI.Services
 
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadAsStringAsync();
+                    var result = await response.Content.ReadFromJsonAsync<AiMessageResponse>();
+                    return result?.GeneratedMessage ?? "Tomt svar från AI.";
                 }
 
                 _logger.LogWarning("AI Service returnerade status: {StatusCode}", response.StatusCode);
